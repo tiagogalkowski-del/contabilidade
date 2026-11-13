@@ -48,7 +48,7 @@ function CashTable({title,rows,negative=false}){
  return <div className="statement-block"><h3>{title}</h3><div className="table-wrap"><table><thead><tr><th>Movimentação</th><th className="amount-cell">Valor</th></tr></thead><tbody>{rows.map(r=><tr key={r.name}><td>{r.name}</td><td className="amount-cell">{money(r.value)}</td></tr>)}<tr className="statement-total"><td>Total {negative?"de saídas":"de entradas"}</td><td className="amount-cell">{money(total(rows))}</td></tr></tbody></table></div></div>
 }
 function SummaryLine({name,value}){return <div className="statement-result"><span>{name}</span><strong>{money(value)}</strong></div>}
-export function ExtraStatements(props){
+export function ExtraStatements({view="balancete",...props}){
  const s=computeExtraStatements(props);
  const ok=s.trialDifference===0&&s.cashDifference===0&&!s.statement.issues.length;
  return <div className="panel">
@@ -59,10 +59,11 @@ export function ExtraStatements(props){
    <div><span>Variação do caixa</span><strong>{money(s.cashChange)}</strong></div>
    <div><span>Patrimônio líquido final</span><strong>{money(s.equityClosing)}</strong></div>
   </div>
-  <div className="section-head"><div><small>RELATÓRIO 1</small><h3>Balancete de verificação em 31/12/2026</h3></div></div>
+  {view==="balancete"&&<><div className="section-head"><div><small>RELATÓRIO 1</small><h3>Balancete de verificação em 31/12/2026</h3></div></div>
   <div className="table-wrap"><table><thead><tr><th>Conta</th><th className="amount-cell">Saldo devedor</th><th className="amount-cell">Saldo credor</th></tr></thead><tbody>{s.trial.map(r=><tr key={r.name}><td>{r.name}</td><td className="amount-cell">{money(r.debit)}</td><td className="amount-cell">{money(r.credit)}</td></tr>)}<tr className="statement-total"><td>Total</td><td className="amount-cell">{money(s.totalDebit)}</td><td className="amount-cell">{money(s.totalCredit)}</td></tr></tbody></table></div>
   <p className="hint">Balancete anterior ao encerramento das contas de resultado. O saldo inicial do patrimônio é registrado pelo capital informado e exige conferência com os ativos iniciais.</p>
-  <div className="section-head"><div><small>RELATÓRIO 2</small><h3>Demonstração dos Fluxos de Caixa — método direto simplificado</h3></div></div>
+  </>}
+  {view==="dfc"&&<><div className="section-head"><div><small>RELATÓRIO 2</small><h3>Demonstração dos Fluxos de Caixa — método direto simplificado</h3></div></div>
   <CashTable title="Entradas operacionais" rows={s.groups.operatingIn}/>
   <CashTable title="Saídas operacionais" rows={s.groups.operatingOut} negative/>
   <SummaryLine name="Fluxo líquido operacional" value={s.operatingNet}/>
@@ -73,9 +74,11 @@ export function ExtraStatements(props){
   <SummaryLine name="Variação líquida do caixa" value={s.cashChange}/>
   <SummaryLine name="Saldo inicial do caixa" value={s.openingCash}/>
   <SummaryLine name="Saldo final do caixa" value={s.closingCash}/>
-  <div className="section-head"><div><small>RELATÓRIO 3</small><h3>Movimentação do patrimônio líquido — simplificada</h3></div></div>
+  </>}
+  {view==="pl"&&<><div className="section-head"><div><small>RELATÓRIO 3</small><h3>Movimentação do patrimônio líquido — simplificada</h3></div></div>
   <div className="statement-block"><div className="table-wrap"><table><thead><tr><th>Descrição</th><th className="amount-cell">Valor</th></tr></thead><tbody>{s.equity.map(r=><tr key={r.name}><td>{r.name}</td><td className="amount-cell">{money(r.value)}</td></tr>)}<tr className="statement-total"><td>Patrimônio líquido ao final de 2026</td><td className="amount-cell">{money(s.equityClosing)}</td></tr></tbody></table></div></div>
   <p className="hint">Não foram implementados aportes posteriores, distribuição de lucros ou reservas. O resultado é demonstrado sem simular distribuição nem encerramento definitivo.</p>
+  </>}
   <div className="section-head"><div><small>RECONCILIAÇÃO</small><h3>Conferência entre demonstrativos</h3></div></div>
   {ok?<div className="statement-success">Balancete e fluxo de caixa conciliados com os lançamentos e o balanço cadastrado.</div>:<div className="statement-warning"><strong>Há informações pendentes de conferência.</strong><ul>
    {s.trialDifference!==0&&<li>Balancete apresenta diferença de {money(s.trialDifference)}.</li>}
