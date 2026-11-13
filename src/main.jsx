@@ -9,8 +9,8 @@ import {ExtraStatements} from "./ExtraStatements.jsx";
 import {ProjectTools} from "./ProjectTools.jsx";
 
 const CAPITAL=39250;
-const menus=[["inicio","⌂","Início"],["cadastros","▣","Cadastros"],["lancamentos","↔","Lançamentos"],["estoque","▤","Estoque"],["prazo","◷","A Prazo"],["eventos","◆","Demais Eventos"],["resultado","▥","Resultado e Balanço"],["demonstracoes","▦","Demonstrações"],["ferramentas","⚙","Ferramentas e Testes"]];
-const info={inicio:["Visão geral","Sistema contábil acadêmico — exercício de 2026."],cadastros:["Cadastros","Itens, clientes, fornecedores, bens e plano de contas."],lancamentos:["Lançamentos","Registro contábil com débito e crédito."],estoque:["Estoque","Controle de entradas, saídas, saldo e custo médio."],prazo:["Operações a prazo","Contas a receber e contas a pagar."],eventos:["Demais eventos","Aluguel, salários, empréstimos, juros e outros eventos."],resultado:["Resultado e Balanço","Demonstração do resultado e Balanço Patrimonial."],demonstracoes:["Outras demonstrações","Balancete, fluxo de caixa e patrimônio líquido."],ferramentas:["Ferramentas e testes","Backup, exportação e conferências finais."]};
+const menus=[["inicio","⌂","Início"],["cadastros","▣","Cadastros"],["lancamentos","↔","Lançamentos"],["estoque","▤","Estoque"],["resultado","▥","Resultado e Balanço"],["ferramentas","⚙","Ferramentas e Testes"]];
+const info={inicio:["Visão geral","Sistema contábil acadêmico — exercício de 2026."],cadastros:["Cadastros","Itens, clientes, fornecedores, bens e plano de contas."],lancamentos:["Lançamentos","Compras, vendas, operações a prazo e demais eventos contábeis."],estoque:["Estoque","Controle de entradas, saídas, saldo e custo médio."],prazo:["Operações a prazo","Contas a receber e contas a pagar."],eventos:["Demais eventos","Aluguel, salários, empréstimos, juros e outros eventos."],resultado:["Resultado e Balanço","Escolha a demonstração contábil que deseja visualizar."],ferramentas:["Ferramentas e testes","Backup, exportação e conferências finais."]};
 const sections=[
  {id:"items",label:"Itens",fields:[["name","Descrição","text",true],["sku","Código","text"],["unit","Unidade","text"],["quantity","Quantidade inicial","number"],["unitCost","Custo unitário inicial (R$)","number"]]},
  {id:"suppliers",label:"Fornecedores",fields:[["name","Nome / Razão social","text",true],["document","CPF / CNPJ","text"],["phone","Telefone","text"],["email","E-mail","email"],["address","Endereço","text"]]},
@@ -28,6 +28,7 @@ function App(){
  useEffect(()=>localStorage.setItem("contabilidade-caixa-inicial",cash),[cash]);
  const [entries,setEntries]=useState(loadEntries);
  useEffect(()=>saveEntries(entries),[entries]);
+ const [launchView,setLaunchView]=useState("vista"),[statementView,setStatementView]=useState("dre");
  const [editing,setEditing]=useState(null),[form,setForm]=useState({});
  const [notice,setNotice]=useState("");
  const current=sections.find(s=>s.id===tab)||sections[0];
@@ -55,12 +56,13 @@ function App(){
  {notice&&<div className="notice">{notice}</div>}
  {editing!==null?<form className="record-form" onSubmit={save}><div className="form-grid">{current.fields.map(([key,label,type,required,options])=><label key={key}>{label}{type==="select"?<select required={!!required} value={form[key]||""} onChange={e=>setForm({...form,[key]:e.target.value})}><option value="">Selecione...</option>{options.map(o=><option key={o}>{o}</option>)}</select>:<input type={type} required={!!required} min={type==="number"?"0":type==="date"?"2026-01-01":undefined} max={type==="date"?"2026-12-31":undefined} step={type==="number"?"0.01":undefined} value={form[key]??""} onChange={e=>setForm({...form,[key]:e.target.value})}/>}</label>)}</div><div className="actions"><button type="button" className="secondary" onClick={()=>{setEditing(null);setForm({})}}>Cancelar</button><button className="primary" type="submit">Salvar cadastro</button></div></form>:<DataTable section={current} rows={data[tab]} onEdit={edit} onRemove={remove}/>}
  </div>:null}
- {active==="lancamentos"&&<Ledger items={data.items} entries={entries} setEntries={setEntries} cash={cash}/>}
+ {active==="lancamentos"&&<><div className="panel grouped-selector"><div className="section-head"><div><small>TIPO DE LANÇAMENTO</small><h3>Escolha a operação</h3></div></div><div className="tabs unified-tabs" role="group" aria-label="Tipo de lançamento">{[["vista","À vista e livro diário"],["prazo","Operações a prazo"],["eventos","Demais eventos"]].map(([id,name])=><button type="button" key={id} className={launchView===id?"selected":""} aria-pressed={launchView===id} onClick={()=>setLaunchView(id)}>{name}</button>)}</div></div>
+ {launchView==="vista"&&<Ledger items={data.items} entries={entries} setEntries={setEntries} cash={cash}/>}
+ {launchView==="prazo"&&<Credit items={data.items} customers={data.customers} suppliers={data.suppliers} entries={entries} setEntries={setEntries} cash={cash}/>}
+ {launchView==="eventos"&&<Events items={data.items} assets={data.assets} entries={entries} setEntries={setEntries} cash={cash}/>}</>}
  {active==="estoque"&&<Inventory items={data.items} entries={entries}/>}
- {active==="prazo"&&<Credit items={data.items} customers={data.customers} suppliers={data.suppliers} entries={entries} setEntries={setEntries} cash={cash}/>}
- {active==="eventos"&&<Events items={data.items} assets={data.assets} entries={entries} setEntries={setEntries} cash={cash}/>}
- {active==="resultado"&&<Results items={data.items} assets={data.assets} entries={entries} cash={cash} capital={CAPITAL}/>}
- {active==="demonstracoes"&&<ExtraStatements items={data.items} assets={data.assets} entries={entries} cash={cash} capital={CAPITAL}/>}
+ {active==="resultado"&&<><div className="panel grouped-selector"><div className="section-head"><div><small>DEMONSTRAÇÕES CONTÁBEIS</small><h3>Selecionar demonstração</h3></div></div><label className="statement-picker">Tipo de demonstração<select value={statementView} onChange={e=>setStatementView(e.target.value)}>{[["dre","Demonstração do Resultado (DRE)"],["balanco","Balanço Patrimonial (BP)"],["razao","Razão sintético"],["balancete","Balancete de verificação"],["dfc","Demonstração dos Fluxos de Caixa (DFC)"],["pl","Movimentação do Patrimônio Líquido"]].map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label></div>
+ {["dre","balanco","razao"].includes(statementView)?<Results view={statementView} items={data.items} assets={data.assets} entries={entries} cash={cash} capital={CAPITAL}/>:<ExtraStatements view={statementView} items={data.items} assets={data.assets} entries={entries} cash={cash} capital={CAPITAL}/>}</>}
  {active==="ferramentas"&&<ProjectTools data={data} cash={cash} entries={entries} setData={setData} setCash={setCash} setEntries={setEntries} capital={CAPITAL}/>}
  {active==="cadastros"&&<OpeningBalances cash={cash} setCash={entries.length?undefined:setCash} stockValue={stockValue} equipmentValue={equipmentValue} totalAssets={totalAssets} balanced={balanced} items={data.items} assets={data.assets}/>}
  </section></main></div>
