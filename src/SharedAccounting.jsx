@@ -63,7 +63,8 @@ export function useSharedAccounting({data,setData,cash,setCash,entries,setEntrie
   try{
    const result=await writeRemote(version.current,payload);
    version.current=Number(result.versao);
-   setChangeId(n=>n===serial?0:n);
+   if(changes.current===serial){changes.current=0;setChangeId(0)}
+   else setChangeId(n=>n===serial?0:n);
    setStatus("Dados compartilhados salvos");
   }catch(e){
    if(e.message.includes("LIMITE_ESCRITAS")){
@@ -126,7 +127,7 @@ export function useSharedAccounting({data,setData,cash,setCash,entries,setEntrie
   configured:CONFIGURED,ready,status,
   setSharedData:sharedData,setSharedCash:sharedCash,setSharedEntries:sharedEntries,
   importLocal,canImport:CONFIGURED&&ready&&hasData(initial.current),
-  reload:()=>{if(changes.current>0&&!confirm("Descartar alterações locais ainda não salvas?"))return;setChangeId(0);lock.current=false;load();}
+  reload:async()=>{if(changes.current>0&&!confirm("Descartar alterações locais ainda não salvas?"))return;changes.current=0;setChangeId(0);lock.current=false;clearTimeout(timer.current);timer.current=null;pending.current=false;await load();}
  };
 }
 export function SharedIndicator({shared}){
