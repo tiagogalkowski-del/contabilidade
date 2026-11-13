@@ -13,7 +13,7 @@ const result=await build({
    'export {computeStatement} from "./src/Results.jsx";',
    'export {computeExtraStatements} from "./src/ExtraStatements.jsx";',
    'export {validateBackup,csv} from "./src/ProjectTools.jsx";'
-  ].join("\\n"),
+  ].join("\n"),
   resolveDir:process.cwd(),sourcefile:"suite-entry.mjs",loader:"js"
  },
  bundle:true,platform:"node",format:"esm",packages:"external",write:false,outfile:output,logLevel:"silent"
