@@ -56,27 +56,30 @@ export function computeStatement({items=[],assets=[],entries=[],cash=0,capital=3
  return {openingTotal,capitalCents,revenues,costs,expenses,revenue,cmv,operating,gross,result,assetsRows,liabilitiesRows,equityRows,assetsTotal,liabilitiesTotal,equityTotal,difference,totalDebits,totalCredits,trial,issues,entriesCount:entries.length};
 }
 function Table({title,rows,totalLabel,total}){return <div className="statement-block"><h3>{title}</h3><div className="table-wrap"><table><thead><tr><th>Conta</th><th className="amount-cell">Valor (R$)</th></tr></thead><tbody>{rows.map(r=><tr key={r.name}><td>{r.name}</td><td className="amount-cell">{money(r.value)}</td></tr>)}<tr className="statement-total"><td>{totalLabel}</td><td className="amount-cell">{money(total)}</td></tr></tbody></table></div></div>}
-export function Results({items,assets,entries,cash,capital}){
+export function Results({items,assets,entries,cash,capital,view="dre"}){
  const s=computeStatement({items,assets,entries,cash,capital});
  return <div className="panel"><div className="section-head"><div><small>ETAPA 7 — EXERCÍCIO 2026</small><h3>Apuração do resultado e Balanço Patrimonial</h3></div><span className={s.issues.length?"balance-pending":"balance-ok"}>{s.issues.length?"Conferência pendente":"Balanço conferido"}</span></div>
  <p className="hint">Valores calculados dos cadastros iniciais e dos lançamentos registrados neste navegador. O capital de R$ 39.250,00 é uma referência do enunciado e não é ajustado automaticamente para forçar o balanço.</p>
  <div className="ledger-metrics"><div><span>Receita de vendas</span><strong>{money(s.revenue)}</strong></div><div><span>Lucro ou prejuízo</span><strong>{money(s.result)}</strong></div><div><span>Diferença do balanço</span><strong>{money(s.difference)}</strong></div></div>
- <div className="section-head"><div><small>DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO</small><h3>DRE — 01/01 a 31/12/2026</h3></div></div>
+ {view==="dre"&&<><div className="section-head"><div><small>DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO</small><h3>DRE — 01/01 a 31/12/2026</h3></div></div>
  <Table title="Receitas" rows={s.revenues} totalLabel="Receita total" total={s.revenue}/>
  <Table title="Custos das mercadorias" rows={s.costs} totalLabel="Lucro bruto (receita − CMV)" total={s.gross}/>
  <Table title="Despesas" rows={s.expenses} totalLabel="Total de despesas" total={s.operating}/>
  <div className="statement-result"><span>Resultado líquido do exercício</span><strong>{money(s.result)}</strong></div>
- <div className="section-head"><div><small>POSIÇÃO PATRIMONIAL EM 31/12/2026</small><h3>Balanço Patrimonial</h3></div></div>
+ </>}
+ {view==="balanco"&&<><div className="section-head"><div><small>POSIÇÃO PATRIMONIAL EM 31/12/2026</small><h3>Balanço Patrimonial</h3></div></div>
  <Table title="Ativo" rows={s.assetsRows} totalLabel="Total do ativo" total={s.assetsTotal}/>
  <Table title="Passivo" rows={s.liabilitiesRows} totalLabel="Total do passivo" total={s.liabilitiesTotal}/>
  <Table title="Patrimônio líquido" rows={s.equityRows} totalLabel="Total do patrimônio líquido" total={s.equityTotal}/>
  <div className="statement-result"><span>Passivo + patrimônio líquido</span><strong>{money(s.liabilitiesTotal+s.equityTotal)}</strong></div>
  <div className="statement-result"><span>Diferença: ativo − (passivo + PL)</span><strong>{money(s.difference)}</strong></div>
+ </>}
  <div className="section-head"><div><small>CONFERÊNCIAS</small><h3>Validação do exercício</h3></div></div>
  {s.issues.length?<div className="statement-warning"><strong>Verificações pendentes ({s.issues.length})</strong><ul>{s.issues.map((msg,i)=><li key={i}>{msg}</li>)}</ul></div>:<div className="statement-success">Conferência contábil sem divergências identificadas pelas regras implementadas.</div>}
  <p className="hint">Saldos iniciais: {money(s.openingTotal)} · Capital informado: {money(s.capitalCents)} · Partidas no razão: débitos {money(s.totalDebits)} e créditos {money(s.totalCredits)}.</p>
- <div className="section-head"><div><small>RAZÃO SINTÉTICO</small><h3>Movimentação por conta</h3></div></div>
+ {view==="razao"&&<><div className="section-head"><div><small>RAZÃO SINTÉTICO</small><h3>Movimentação por conta</h3></div></div>
  <div className="table-wrap"><table><thead><tr><th>Conta</th><th className="amount-cell">Débitos</th><th className="amount-cell">Créditos</th><th className="amount-cell">Saldo devedor (+) / credor (−)</th></tr></thead><tbody>{s.trial.map(r=><tr key={r.name}><td>{r.name}</td><td className="amount-cell">{money(r.debit)}</td><td className="amount-cell">{money(r.credit)}</td><td className="amount-cell">{money(r.net)}</td></tr>)}</tbody></table></div>
+ </>}
  <p className="hint">A DRE é simplificada e considera somente eventos já implementados. Tributos, encargos e demais ajustes dependem da folha original da atividade; resultado de referência de R$ 1.332,90 ainda não foi validado.</p>
  </div>;
 }
