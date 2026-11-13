@@ -9,3 +9,13 @@
 .primary:disabled{opacity:.55;cursor:not-allowed}
 .cash-field input:disabled{background:#f0f2f6;cursor:not-allowed}
 @media(max-width:700px){.ledger-metrics{grid-template-columns:1fr}}
+
+.statement-block{margin:17px 0 24px}.statement-block h3{font-size:16px;margin:0 0 10px}
+.amount-cell{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.statement-total td{font-weight:750;background:#eef4ff;border-top:2px solid #d9e5fa}
+.statement-result{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid #d9e5f4;background:#f3f7ff;border-radius:10px;padding:16px 18px;margin:12px 0 20px;font-weight:700}
+.statement-result strong{font-variant-numeric:tabular-nums;font-size:18px}
+.statement-warning{background:#fff8ed;color:#74501f;border:1px solid #efd9b5;border-radius:10px;padding:16px;margin:12px 0 20px}
+.statement-warning ul{padding-left:22px;margin:9px 0 0}.statement-warning li{margin:7px 0}
+.statement-success{border:1px solid #cbe6d7;background:#effaf3;color:#236b42;border-radius:10px;padding:16px;margin:12px 0 20px}
+@media(max-width:700px){.statement-result{align-items:flex-start;flex-direction:column}}
