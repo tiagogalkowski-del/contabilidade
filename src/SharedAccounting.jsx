@@ -69,7 +69,7 @@ export function useSharedAccounting({data,setData,cash,setCash,entries,setEntrie
   }catch(e){
    if(e.message.includes("LIMITE_ESCRITAS")){
     setStatus("Aguardando limite de gravações...");
-    timer.current=setTimeout(()=>{pending.current=false;save()},2600);
+    timer.current=setTimeout(()=>{timer.current=null;pending.current=false;save()},2600);
     return;
    }
    lock.current=true;
