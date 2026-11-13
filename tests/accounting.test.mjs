@@ -69,7 +69,7 @@ test("datas fora de 2026 não são aceitas",()=>{
  assert.equal(validExerciseDate("2027-01-01"),false);
 });
 test("backup JSON aceito e arquivo inválido rejeitado",()=>{
- const backup={schema:1,exercise:2026,data:{items,assets,suppliers:[],customers:[],accounts:[]},cash:"30000",entries};
+ const backup={schema:1,exercise:2026,data:{items,assets,suppliers:[],customers:[{id:"client1",name:"Cliente"}],accounts:[]},cash:"30000",entries};
  assert.equal(validateBackup(backup).entries.length,8);
  assert.throws(()=>validateBackup({...backup,exercise:2027}));
  assert.throws(()=>validateBackup({...backup,entries:[{...entries[0],date:"2027-01-01"}]}));
