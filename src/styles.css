@@ -35,3 +35,13 @@
  table{width:100%}
  .app{display:block!important}
 }
+
+/* Navegação unificada de lançamentos e demonstrações */
+.grouped-selector{margin-bottom:16px;padding-bottom:18px}
+.grouped-selector .section-head{margin-bottom:12px}
+.unified-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:0}
+.unified-tabs button{flex:1 1 180px;min-height:43px;padding:10px 14px;white-space:normal;border-radius:8px;transition:background .15s ease,border-color .15s ease}
+.unified-tabs button:focus-visible,.statement-picker select:focus-visible{outline:2px solid #2465d1;outline-offset:2px}
+.statement-picker{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:650;color:#485b76;max-width:570px}
+.statement-picker select{width:100%;min-height:44px;border:1px solid #cfd9e8;background:#fff;border-radius:8px;padding:9px 12px;font:inherit;color:#172033;cursor:pointer}
+@media(max-width:700px){.grouped-selector{padding:16px}.unified-tabs{flex-direction:column}.unified-tabs button{flex:auto;width:100%}.statement-picker{max-width:none}}
