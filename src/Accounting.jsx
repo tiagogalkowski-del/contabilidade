@@ -11,12 +11,26 @@ export function validExerciseDate(date){
 }
 export function rebuild(items,entries){
  const balances=Object.fromEntries(items.map(i=>[i.id,{qty:Number(i.quantity||0),value:Math.round(Number(i.quantity||0)*toCents(i.unitCost))}]));
- const ordered=[...entries].sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt);
- const movements=[],debts=[],debtMap=new Map();let netCash=0;
+ const ordered=[...entries].sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt||0)-(b.createdAt||0));
+ const movements=[],debts=[],debtMap=new Map(),loans=[],loanMap=new Map(),depreciation={};let netCash=0;
  for(const e of ordered){
   if(e.kind==="pagamento"||e.kind==="recebimento"){
-   const debt=debtMap.get(e.refId);if(debt){debt.remaining-=e.totalCents;netCash+=e.kind==="recebimento"?e.totalCents:-e.totalCents}
+   const debt=debtMap.get(e.refId);
+   if(debt){debt.remaining-=e.totalCents;netCash+=e.kind==="recebimento"?e.totalCents:-e.totalCents}
    continue;
+  }
+  if(e.kind==="emprestimo"){
+   const loan={...e,remaining:e.totalCents};loans.push(loan);loanMap.set(e.id,loan);netCash+=e.totalCents;continue;
+  }
+  if(e.kind==="amortizacao"){
+   const loan=loanMap.get(e.loanId);if(loan){loan.remaining-=e.totalCents;netCash-=e.totalCents}
+   continue;
+  }
+  if(["aluguel","salario","energia","outra_despesa","juros"].includes(e.kind)){
+   netCash-=e.totalCents;continue;
+  }
+  if(e.kind==="depreciacao"){
+   depreciation[e.assetId]=(depreciation[e.assetId]||0)+e.totalCents;continue;
   }
   const b=balances[e.itemId];if(!b)continue;
   const beforeQty=b.qty,beforeValue=b.value;
@@ -32,7 +46,7 @@ export function rebuild(items,entries){
   }
   movements.push({...e,beforeQty,beforeValue,afterQty:b.qty,afterValue:b.value});
  }
- return {balances,movements,debts,netCash};
+ return {balances,movements,debts,loans,depreciation,netCash};
 }
 export function accountLines(e){
  switch(e.kind){
@@ -45,6 +59,14 @@ export function accountLines(e){
  {name:"Estoque de mercadorias",d:0,c:e.costCents}];
  case "pagamento":return [{name:"Fornecedores",d:e.totalCents,c:0},{name:"Caixa",d:0,c:e.totalCents}];
  case "recebimento":return [{name:"Caixa",d:e.totalCents,c:0},{name:"Clientes",d:0,c:e.totalCents}];
+ case "aluguel":return [{name:"Despesa com aluguel",d:e.totalCents,c:0},{name:"Caixa",d:0,c:e.totalCents}];
+ case "salario":return [{name:"Despesa com salários",d:e.totalCents,c:0},{name:"Caixa",d:0,c:e.totalCents}];
+ case "energia":return [{name:"Despesa com água e energia",d:e.totalCents,c:0},{name:"Caixa",d:0,c:e.totalCents}];
+ case "outra_despesa":return [{name:"Outras despesas operacionais",d:e.totalCents,c:0},{name:"Caixa",d:0,c:e.totalCents}];
+ case "emprestimo":return [{name:"Caixa",d:e.totalCents,c:0},{name:"Empréstimos a pagar",d:0,c:e.totalCents}];
+ case "amortizacao":return [{name:"Empréstimos a pagar",d:e.totalCents,c:0},{name:"Caixa",d:0,c:e.totalCents}];
+ case "juros":return [{name:"Despesa com juros",d:e.totalCents,c:0},{name:"Caixa",d:0,c:e.totalCents}];
+ case "depreciacao":return [{name:"Despesa com depreciação",d:e.totalCents,c:0},{name:"Depreciação acumulada",d:0,c:e.totalCents}];
  default:return [];
  }
 }
@@ -64,7 +86,7 @@ export function Ledger({items,entries,setEntries,cash}){
   if(accountLines(entry).reduce((v,l)=>v+l.d-l.c,0)!==0){setMsg("Os débitos e créditos não conferem.");return}
   setEntries(previous=>[...previous,entry]);setQty("1");setUnit("");setNote("");setMsg("Lançamento registrado.");
  }
- function undo(){if(!entries.length||!confirm("Excluir o último lançamento?"))return;const last=[...entries].sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt).at(-1);if(last.kind!=="compra"&&last.kind!=="venda"){setMsg("O último fato pertence às operações a prazo. Não é possível excluí-lo por esta tela.");return}setEntries(previous=>previous.filter(e=>e.id!==last.id))}
+ function undo(){if(!entries.length)return;const last=[...entries].sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt).at(-1);if(last.kind!=="compra"&&last.kind!=="venda"){setMsg("Somente o último fato, quando for uma operação à vista, pode ser excluído nesta tela.");return}if(!confirm("Excluir o último lançamento?"))return;setEntries(previous=>previous.filter(e=>e.id!==last.id))}
  return <div className="panel"><div className="section-head"><div><small>ETAPA 3</small><h3>Compras e vendas à vista</h3></div><span className="balance-ok">Débito = Crédito</span></div>
  <p className="hint">As operações atualizam o estoque pelo custo médio móvel. Cadastre primeiro mercadorias e saldo inicial de caixa na aba Cadastros.</p>
  <div className="ledger-metrics"><div><span>Caixa atual</span><strong>{brl(cashCents)}</strong></div><div><span>Operações</span><strong>{entries.length}</strong></div><div><span>Estoque atual</span><strong>{brl(Object.values(state.balances).reduce((s,b)=>s+b.value,0))}</strong></div></div>
@@ -78,7 +100,7 @@ export function Ledger({items,entries,setEntries,cash}){
  </div>{current&&<p className="hint">Saldo disponível: {available?.qty??0} {current.unit||"un."} · Total: {brl(Number(qty)*toCents(unit))}</p>}{msg&&<div className="notice" role="status">{msg}</div>}
  <div className="actions"><button className="primary" disabled={!items.length}>Registrar lançamento</button></div></form>
  <div className="section-head"><div><small>LIVRO DIÁRIO</small><h3>Histórico</h3></div>{entries.some(e=>e.kind==="compra"||e.kind==="venda")&&<button className="secondary" onClick={undo}>Excluir último</button>}</div>
- {!entries.length?<div className="empty-state">Nenhum lançamento registrado.</div>:<div className="table-wrap"><table><thead><tr><th>Data</th><th>Operação</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Débitos / Créditos</th></tr></thead><tbody>{[...entries].sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt).map(e=><tr key={e.id}><td>{e.date.split("-").reverse().join("/")}</td><td>{({compra:"Compra",venda:"Venda",compra_prazo:"Compra a prazo",venda_prazo:"Venda a prazo",pagamento:"Pagamento",recebimento:"Recebimento"})[e.kind]}</td><td>{e.itemName}</td><td>{e.quantity||"—"}</td><td>{brl(e.totalCents)}</td><td>{accountLines(e).map((l,i)=><div className="journal-line" key={i}>{l.d?"D":"C"} — {l.name}: {brl(l.d||l.c)}</div>)}</td></tr>)}</tbody></table></div>}
+ {!entries.length?<div className="empty-state">Nenhum lançamento registrado.</div>:<div className="table-wrap"><table><thead><tr><th>Data</th><th>Operação</th><th>Item</th><th>Quantidade</th><th>Valor</th><th>Débitos / Créditos</th></tr></thead><tbody>{[...entries].sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt).map(e=><tr key={e.id}><td>{e.date.split("-").reverse().join("/")}</td><td>{({compra:"Compra",venda:"Venda",compra_prazo:"Compra a prazo",venda_prazo:"Venda a prazo",pagamento:"Pagamento",recebimento:"Recebimento",aluguel:"Aluguel",salario:"Salários",energia:"Água/energia",outra_despesa:"Despesa",emprestimo:"Empréstimo",amortizacao:"Amortização",juros:"Juros",depreciacao:"Depreciação"})[e.kind]||e.kind}</td><td>{e.itemName||e.assetName||e.description||"—"}</td><td>{e.quantity||"—"}</td><td>{brl(e.totalCents)}</td><td>{accountLines(e).map((l,i)=><div className="journal-line" key={i}>{l.d?"D":"C"} — {l.name}: {brl(l.d||l.c)}</div>)}</td></tr>)}</tbody></table></div>}
  <p className="hint">Inclui lançamentos à vista e a prazo. Dados guardados apenas neste navegador.</p></div>
 }
 export function Inventory({items,entries}){
