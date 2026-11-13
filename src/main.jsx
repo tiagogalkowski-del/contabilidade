@@ -4,6 +4,7 @@ import"./styles.css";
 import {Ledger,Inventory,loadEntries,saveEntries} from "./Accounting.jsx";
 import {Credit} from "./Credit.jsx";
 import {Events} from "./Events.jsx";
+import {Results} from "./Results.jsx";
 
 const CAPITAL=39250;
 const menus=[["inicio","⌂","Início"],["cadastros","▣","Cadastros"],["lancamentos","↔","Lançamentos"],["estoque","▤","Estoque"],["prazo","◷","A Prazo"],["eventos","◆","Demais Eventos"],["resultado","▥","Resultado e Balanço"]];
@@ -47,15 +48,16 @@ function App(){
  }
  function remove(id){if((tab==="assets"&&entries.some(e=>e.kind==="depreciacao"&&e.assetId===id))||(tab==="items"&&entries.some(e=>e.itemId===id))||(tab==="suppliers"&&entries.some(e=>e.kind==="compra_prazo"&&e.partnerId===id))||(tab==="customers"&&entries.some(e=>e.kind==="venda_prazo"&&e.partnerId===id))){setNotice("Não é possível excluir cadastro vinculado a lançamentos.");return}if(!confirm("Excluir este cadastro?"))return;setData(old=>({...old,[tab]:old[tab].filter(x=>x.id!==id)}));setNotice("Cadastro excluído.")}
  return <div className="app"><aside><div className="brand"><b>Σ</b><div><strong>Sistema Contábil</strong><small>FURB • 2026</small></div></div><nav><label>MENU PRINCIPAL</label>{menus.map(([id,icon,name])=><button className={active===id?"active":""} onClick={()=>setActive(id)} key={id}><i>{icon}</i>{name}</button>)}</nav><footer>Exercício<strong>01/01/2026 — 31/12/2026</strong></footer></aside>
- <main><header><div><small>CONTABILIDADE GERAL</small><h1>{info[active][0]}</h1></div><div className="period">Período<strong>2026</strong></div></header><section><div className="intro"><div><h2>{info[active][1]}</h2><p>Período contábil fixo: 01/01/2026 a 31/12/2026.</p></div><span className="status">● Etapas 1 a 6</span></div>
+ <main><header><div><small>CONTABILIDADE GERAL</small><h1>{info[active][0]}</h1></div><div className="period">Período<strong>2026</strong></div></header><section><div className="intro"><div><h2>{info[active][1]}</h2><p>Período contábil fixo: 01/01/2026 a 31/12/2026.</p></div><span className="status">● Etapas 1 a 7</span></div>
  {active==="inicio"?<Dashboard data={data} totalAssets={totalAssets} balanced={balanced}/>:active==="cadastros"?<div className="panel"><div className="tabs">{sections.map(s=><button key={s.id} className={tab===s.id?"selected":""} onClick={()=>selectTab(s.id)}>{s.label}<span>{data[s.id].length}</span></button>)}</div><div className="section-head"><div><small>CADASTROS</small><h3>{current.label}</h3></div><button className="primary" onClick={startNew}>+ Novo cadastro</button></div>
  {notice&&<div className="notice">{notice}</div>}
  {editing!==null?<form className="record-form" onSubmit={save}><div className="form-grid">{current.fields.map(([key,label,type,required,options])=><label key={key}>{label}{type==="select"?<select required={!!required} value={form[key]||""} onChange={e=>setForm({...form,[key]:e.target.value})}><option value="">Selecione...</option>{options.map(o=><option key={o}>{o}</option>)}</select>:<input type={type} required={!!required} min={type==="number"?"0":type==="date"?"2026-01-01":undefined} max={type==="date"?"2026-12-31":undefined} step={type==="number"?"0.01":undefined} value={form[key]??""} onChange={e=>setForm({...form,[key]:e.target.value})}/>}</label>)}</div><div className="actions"><button type="button" className="secondary" onClick={()=>{setEditing(null);setForm({})}}>Cancelar</button><button className="primary" type="submit">Salvar cadastro</button></div></form>:<DataTable section={current} rows={data[tab]} onEdit={edit} onRemove={remove}/>}
- </div>:active==="resultado"?<div className="panel empty"><div className="icon">⚙</div><h3>{info[active][0]}</h3><p>Esta funcionalidade será implementada nas próximas etapas, sem alterar os cadastros já realizados.</p><em>Próxima etapa correspondente</em></div>:null}
+ </div>:null}
  {active==="lancamentos"&&<Ledger items={data.items} entries={entries} setEntries={setEntries} cash={cash}/>}
  {active==="estoque"&&<Inventory items={data.items} entries={entries}/>}
  {active==="prazo"&&<Credit items={data.items} customers={data.customers} suppliers={data.suppliers} entries={entries} setEntries={setEntries} cash={cash}/>}
  {active==="eventos"&&<Events items={data.items} assets={data.assets} entries={entries} setEntries={setEntries} cash={cash}/>}
+ {active==="resultado"&&<Results items={data.items} assets={data.assets} entries={entries} cash={cash} capital={CAPITAL}/>}
  {active==="cadastros"&&<OpeningBalances cash={cash} setCash={entries.length?undefined:setCash} stockValue={stockValue} equipmentValue={equipmentValue} totalAssets={totalAssets} balanced={balanced} items={data.items} assets={data.assets}/>}
  </section></main></div>
 }
