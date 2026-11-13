@@ -7,7 +7,15 @@ import path from "node:path";
 
 const output=path.resolve(".accounting-test-bundle.mjs");
 const result=await build({
- entryPoints:["src/Accounting.jsx","src/Results.jsx","src/ExtraStatements.jsx","src/ProjectTools.jsx"],
+ stdin:{
+  contents:[
+   'export {rebuild,accountLines,validExerciseDate} from "./src/Accounting.jsx";',
+   'export {computeStatement} from "./src/Results.jsx";',
+   'export {computeExtraStatements} from "./src/ExtraStatements.jsx";',
+   'export {validateBackup,csv} from "./src/ProjectTools.jsx";'
+  ].join("\\n"),
+  resolveDir:process.cwd(),sourcefile:"suite-entry.mjs",loader:"js"
+ },
  bundle:true,platform:"node",format:"esm",packages:"external",write:false,outfile:output,logLevel:"silent"
 });
 await writeFile(output,result.outputFiles[0].contents);
