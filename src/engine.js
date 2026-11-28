@@ -768,13 +768,13 @@ function dreLines(dre) {
     { label: "Despesas operacionais", kind: "header" },
     { label: "Aluguel", value: -pick("despesa_aluguel"), kind: "item" },
     { label: "Salários", value: -pick("despesa_salarios"), kind: "item" },
-    { label: "Depreciação", value: -pick("despesa_depreciacao"), kind: "item" },
-    { label: "Amortização", value: -pick("despesa_amortizacao"), kind: "item" },
-    { label: "Provisão para garantia", value: -pick("despesa_provisao"), kind: "item" },
   ];
   if (pick("despesa_energia")) lines.push({ label: "Água e energia", value: -pick("despesa_energia"), kind: "item" });
   if (pick("despesa_outras")) lines.push({ label: "Outras despesas operacionais", value: -pick("despesa_outras"), kind: "item" });
   lines.push(
+    { label: "Depreciação", value: -pick("despesa_depreciacao"), kind: "item" },
+    { label: "Amortização", value: -pick("despesa_amortizacao"), kind: "item" },
+    { label: "Provisão para garantia", value: -pick("despesa_provisao"), kind: "item" },
     { label: "Resultado operacional", value: dre.operational, kind: "total" },
     { label: "Despesas de financiamento", kind: "header" },
     { label: "Juros", value: -dre.interest, kind: "item" },

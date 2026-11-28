@@ -147,6 +147,12 @@ test("depreciação, amortização, provisão e lucro do controle da página 2",
   assert.equal(books.dmplFinal.total, books.equityTotal);
   const leaves = books.dreLines.filter((line) => line.kind === "item").reduce((sum, line) => sum + line.value, 0);
   assert.equal(leaves, books.result);
+  const labels = books.dreLines.map((line) => line.label);
+  const salarios = labels.indexOf("Salários");
+  const energia = labels.indexOf("Água e energia");
+  const outras = labels.indexOf("Outras despesas operacionais");
+  const depreciacao = labels.indexOf("Depreciação");
+  assert.ok(salarios < energia && energia < outras && outras < depreciacao);
   const doubled = computeBooks({ items, assets, entries, cash: "30000", settings: { warrantyRatePercent: "4", depreciationMethod: "linear" } });
   assert.equal(doubled.provision, 52220);
 });

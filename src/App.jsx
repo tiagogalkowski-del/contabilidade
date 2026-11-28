@@ -365,6 +365,11 @@ function EntryForm({ title, mode, data, entries, setEntries, cash, settings, boo
     const last = lastEntry(entries);
     if (!last || !confirm("Excluir o último lançamento?")) return;
     setEntries((old) => old.filter((entry) => entry.id !== last.id));
+    if ((last.kind === "venda_prazo" || last.kind === "compra_prazo") && draft.refId === last.id) {
+      setDraft((old) => ({ ...old, refId: "" }));
+      setMessage("");
+      setBad(false);
+    }
   }
   const partners = draft.kind === "compra_prazo" ? data.suppliers : data.customers;
   const stockKinds = ["compra", "venda", "compra_prazo", "venda_prazo"];
